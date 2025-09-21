@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TodoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProtectedController;
@@ -27,4 +28,8 @@ Route::middleware('auth:api')->group(function () {
 // Health check
 Route::get('health', function () {
     return response()->json(['status' => 'OK']);
+});
+
+Route::middleware('auth:api')->group(function () {
+    Route::apiResource('todos', TodoController::class);
 });
