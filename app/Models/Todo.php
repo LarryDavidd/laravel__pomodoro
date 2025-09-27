@@ -12,12 +12,12 @@ class Todo extends Model
 
     protected $fillable = [
         'id_todo',
-        'pomodoro_value',
+        'user_id',
         'title',
+        'pomodoro_value',
         'time_create',
         'is_complete',
-        'priority',
-        'user_id'
+        'priority'
     ];
 
     protected $casts = [
@@ -28,5 +28,16 @@ class Todo extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($todo) {
+            if (empty($todo->id_todo)) {
+                $todo->id_todo = \Illuminate\Support\Str::uuid();
+            }
+        });
     }
 }

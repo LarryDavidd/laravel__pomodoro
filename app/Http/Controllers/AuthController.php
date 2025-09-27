@@ -13,7 +13,6 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
@@ -25,7 +24,7 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $request->name,
+            'name' => 'name',
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'email_verified_at' => now(),
@@ -43,12 +42,42 @@ class AuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:6'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422); // 422 вместо 401
+        }
+
         $credentials = $request->only(['email', 'password']);
 
+        // Проверяем существование пользователя
+        $user = User::where('email', $request->email)->first();
+        echo $user;
+        
+        if (!$user) {
+            return response()->json([
+                'error' => 'Invalid credentials' // Общее сообщение без деталей
+            ], 400); // 400 вместо 401
+        }
+
+        // Проверяем пароль
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'error' => 'Invalid credentials' // То же сообщение для безопасности
+            ], 400); // 400 вместо 401
+        }
+
+        // Создаем токен
         if (!$token = auth()->attempt($credentials)) {
             return response()->json([
-                'error' => 'Unauthorized'
-            ], 401);
+                'error' => 'Could not create token'
+            ], 500); // Серверная ошибка
         }
 
         return $this->respondWithToken($token);
